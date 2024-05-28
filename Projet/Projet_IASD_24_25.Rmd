@@ -1,0 +1,159 @@
+---
+title: "Projet IASD 2023-24"
+subtitle: 'Prédiction du prix du logment à Daegu '
+author: "Malik Chettih"
+output:
+#  pdf_document:
+#    toc: yes
+  html_document:
+    code_folding: hide
+    css: ./style.css
+    df_print: paged
+    highlight: tango
+    number_sections: no
+    theme: flatly
+    toc: yes
+    toc_float:
+      collapsed: no
+---
+
+
+---
+
+# Installation des librairies  {.unnumbered}
+```{r}
+library(rmarkdown)
+library(tidyverse) # pour  %>%
+library(questionr) #rename.variable
+library(kableExtra)
+library(knitr)
+
+```
+
+# Task 1.  Téléchargement des données
+
+```{r}
+mydata=read.csv2("train_set.csv", sep=",")
+library(rmarkdown)
+paged_table(mydata)
+```
+
+Visualiser la nature de donnée du dataset
+```{r}
+str(mydata)
+```
+# Task 2.  Transformer la nature des variables nécessaires.
+
+
+```{r}
+mydata$SalePrice<-as.numeric(mydata$SalePrice)
+mydata$HallwayType<-as.factor(mydata$HallwayType)
+mydata$HeatingType<-as.factor(mydata$HeatingType)
+mydata$AptManageType<-as.factor(mydata$AptManageType)
+mydata$N_Parkinglot.Ground.<-as.integer(mydata$N_Parkinglot.Ground.)
+mydata$N_Parkinglot.Basement.<-as.integer(mydata$N_Parkinglot.Basement.)
+mydata$TimeToBusStop=ordered(mydata$TimeToBusStop,levels=c("0~5min","5min~10min","10min~15min"))
+mydata$TimeToSubway=ordered(mydata$TimeToSubway,levels=c("0~5min","5min~10min","10min~15min","15min~20min","no_bus_stop_nearby"))
+mydata$N_APT<-as.integer(mydata$N_APT)
+mydata$N_manager<-as.integer(mydata$N_manager)
+mydata$N_manager<-as.integer(mydata$N_manager)
+mydata$SubwayStation<-as.factor(mydata$SubwayStation)
+mydata$N_FacilitiesNearBy.PublicOffice<-as.integer(mydata$N_FacilitiesNearBy.PublicOffice)
+mydata$N_FacilitiesNearBy.Dpartmentstore.<-as.integer(mydata$N_FacilitiesNearBy.Dpartmentstore.)
+mydata$N_FacilitiesNearBy.Mall.<-as.integer(mydata$N_FacilitiesNearBy.Mall.)
+mydata$N_FacilitiesNearBy.ETC<-as.integer(mydata$N_FacilitiesNearBy.ETC)
+mydata$N_FacilitiesNearBy.Park.<-as.integer(mydata$N_FacilitiesNearBy.Park.)
+mydata$N_SchoolNearBy.Elementary.<-as.integer(mydata$N_SchoolNearBy.Elementary.)
+mydata$N_SchoolNearBy.Middle.<-as.integer(mydata$N_SchoolNearBy.Middle.)
+mydata$N_SchoolNearBy.High.<-as.integer(mydata$N_SchoolNearBy.High.)
+mydata$N_SchoolNearBy.University.<-as.integer(mydata$N_SchoolNearBy.University.)
+mydata$N_FacilitiesNearBy.Total.<-as.integer(mydata$N_FacilitiesNearBy.Total.)
+mydata$N_SchoolNearBy.Total.<-as.integer(mydata$N_SchoolNearBy.Total.)
+str(mydata)
+```
+
+# Task 3.  Données manquantes NA
+
+Sélectionner les variables qui ont plus de 40% de donnees NA.
+```{r}
+seuil<-0.4
+Tester_si_Trop_de_NA<-map_lgl(subset(mydata,select=c(-X)), ~mean(is.na(.x)) >seuil )
+Tester_si_Trop_de_NA %>%  as.matrix()
+```
+
+On garde gardr celle qui n’ont pas plus de 40% de données manquantes en prenant le complémentaire.
+```{r}
+Nom_var_a_garder <- names(Tester_si_Trop_de_NA)[!Tester_si_Trop_de_NA]
+Nom_var_a_garder
+```
+
+Calculer le nombre de données manquante NApar variable à l’aide de la fonction is.na().
+```{r}
+is.na(mydata)%>%colSums() %>%  as.matrix()
+```
+
+Supprimer la variable TimeToSubway
+```{r}
+mydata_subset <- subset(mydata, select = -TimeToSubway)
+```
+Sélectionner les variables quantitatives et remplacer les NApar la median.
+```{r}
+Nom_Var_Quantita<-sapply(mydata_subset, is.numeric)
+mydata_subset[Nom_Var_Quantita] <- lapply(mydata_subset[Nom_Var_Quantita], function(x) ifelse(is.na(x), median(x, na.rm = TRUE), x))
+mydata_subset %>% select_if(is.numeric) %>%is.na()%>%colSums() %>%  as.matrix()
+```
+
+Sélectionner les variables quantitatives et remplacer les NApar la median.
+```{r}
+Nom_Var_Qualita<-mydata_subset %>% discard(is.numeric) %>%colnames()
+
+for(col in Nom_Var_Qualita){
+  mode <- names(which.max(table(mydata_subset[col])))
+  mydata_subset[is.na(mydata_subset[col]), col] <- mode
+}
+
+mydata_subset[,Nom_Var_Qualita] %>% is.na()%>%colSums() %>%  as.matrix()
+```
+
+```{r}
+str(mydata_subset)
+```
+
+# Task 4.  Agir sur les variables
+
+Renommer les variables
+```{r}
+
+mydata_subset=rename.variable(mydata_subset,"SalePrice","Prix_Vente")
+mydata_subset=rename.variable(mydata_subset,"YearBuilt","Année_Construction")
+mydata_subset=rename.variable(mydata_subset,"YrSold","Année_Vente")
+mydata_subset=rename.variable(mydata_subset,"MonthSold","Mois_Vente")
+mydata_subset=rename.variable(mydata_subset,"Size.sqf.","Surface")
+mydata_subset=rename.variable(mydata_subset,"Floor","Niveau_Etage")
+mydata_subset=rename.variable(mydata_subset,"HallwayType","TCouloir")
+mydata_subset=rename.variable(mydata_subset,"HeatingType","TChauffage")
+mydata_subset=rename.variable(mydata_subset,"AptManageType","TGestion")
+mydata_subset=rename.variable(mydata_subset,"N_Parkinglot.Ground.","Nb_Parking_Surface")
+mydata_subset=rename.variable(mydata_subset,"N_Parkinglot.Basement.","Nb_Parking_Sous_Sol")
+mydata_subset=rename.variable(mydata_subset,"TimeToBusStop","Temps_Bus")
+mydata_subset=rename.variable(mydata_subset,"N_APT","Nb_Appartment_Batiment")
+mydata_subset=rename.variable(mydata_subset,"N_manager","Nb_Gestionnaire")
+mydata_subset=rename.variable(mydata_subset,"N_elevators","Nb_Ascenseurs")
+mydata_subset=rename.variable(mydata_subset,"SubwayStation","Distance_Metro")
+mydata_subset=rename.variable(mydata_subset,"N_FacilitiesNearBy.PublicOffice.","Nb_Bureau_Publics")
+mydata_subset=rename.variable(mydata_subset,"N_FacilitiesNearBy.Hospital.","Nb_Hopitaux")
+mydata_subset=rename.variable(mydata_subset,"N_FacilitiesNearBy.Dpartmentstore.","Nb_Grands_Magasins")
+mydata_subset=rename.variable(mydata_subset,"N_FacilitiesNearBy.Mall","Nb_Centre_Commerciaux")
+mydata_subset=rename.variable(mydata_subset,"N_FacilitiesNearBy.ETC.","Nb_AUtres_Proximité")
+mydata_subset=rename.variable(mydata_subset,"N_FacilitiesNearBy.Park.","Nb_Parcs")
+mydata_subset=rename.variable(mydata_subset,"N_SchoolNearBy.Elementary.","Nb_Ecoles_Primaires")
+mydata_subset=rename.variable(mydata_subset,"N_SchoolNearBy.Middle.","Nb_Ecoles_Colléges")
+mydata_subset=rename.variable(mydata_subset,"N_SchoolNearBy.High.","Nb_Ecoles_Lycée")
+mydata_subset=rename.variable(mydata_subset,"N_SchoolNearBy.University.","Nb_Ecoles_Universités")
+mydata_subset=rename.variable(mydata_subset,"N_FacilitiesInApt","Nb_Installations")
+mydata_subset=rename.variable(mydata_subset,"N_FacilitiesNearBy.Total.","Nb_Total_Proximité")
+mydata_subset=rename.variable(mydata_subset,"N_SchoolNearBy.Total.","Nb_Total_Ecoles")
+str(mydata_subset)
+
+```
+

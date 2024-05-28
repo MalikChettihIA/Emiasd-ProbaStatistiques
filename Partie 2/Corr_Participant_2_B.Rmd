@@ -1,0 +1,347 @@
+---
+title: "Part. 2.B Analyse univariée "
+subtitle: " "
+author: "Katia Meziani"
+output:
+#  pdf_document:
+#    toc: yes
+  html_document:
+    code_folding: hide
+    css: ./style.css
+    df_print: paged
+    highlight: tango
+    number_sections: no
+    theme: flatly
+    toc: yes
+    toc_float:
+      collapsed: no
+---
+
+
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE,message=FALSE)
+```
+
+
+
+
+
+
+# Librairies  et jeu de données {.unnumbered}
+
+
+
+```{r message=FALSE, warning=FALSE, out.width = "60%"}
+library(rmarkdown)
+library(tidyverse) # pour  %>%
+library(knitr) # kable
+library(e1071) # skewness et kurtosis
+library(ggplot2)
+library(plotly) # graphes dynamiques
+library(MASS)
+library(fitdistrplus) #graphe Cullen & Frey
+
+
+```
+
+
+
+
+Télécharger le jeu de données EPO modifié et nommer le `mydata`. 
+
+```{r eval=TRUE}
+mydata=read.csv2("mydata2.csv",sep=',',row.names = 1)
+paged_table(mydata)
+```
+
+
+Transformer la nature des variables nécessaires.
+
+```{r eval=TRUE}
+mydata$sexe<-as.factor(mydata$sexe)  
+mydata$taille<-as.numeric(mydata$taille)   
+mydata$Score<-as.factor(mydata$Score) 
+mydata$niveau<-ordered(mydata$niveau,levels=c("L1_2","L3","M1_2"))
+ str(mydata)
+```
+
+Pour alléger les écritures, procédons à des copies de nos variables
+
+```{r eval=TRUE}
+sexe<-mydata$sexe
+age<-mydata$age
+taille<-mydata$taille
+niveau<-mydata$niveau
+Score<-mydata$Score
+scoreNum<-mydata$scoreConnaissance
+```
+
+
+
+###  Task 1 
+
+
+
+
+Afficher la table des effectifs de la variable `sexe` et le nommer `T_eff_sexe`
+
+```{r}
+T_eff_sexe<-table(sexe)
+T_eff_sexe
+```
+
+
+
+Afficher la table des effectifs cummulés de la variable `sexe` 
+
+
+```{r}
+cumsum(T_eff_sexe)
+```
+
+
+
+
+
+###  Task 2  
+
+
+
+
+Afficher les Fréquences de la variable `sexe` 
+
+
+```{r}
+prop.table(T_eff_sexe)
+```
+
+
+
+
+Afficher les Fréquences cummulées de la variable `sexe` .
+
+
+
+```{r}
+cumsum(prop.table(T_eff_sexe))
+```
+
+
+
+###  Task 3  
+
+
+
+Afficher le tableau d'effectifs  de  la variable `taille`  en considérant 4 classes  et le nommer `T_eff_taille_4`.
+
+
+
+```{r}
+T_eff_taille_4<-table(cut(taille,breaks=4))
+T_eff_taille_4
+```
+
+
+Afficher les fréquences de  la variable `taille`  en considérant 4 classes.
+
+
+```{r}
+prop.table(T_eff_taille_4)
+```
+
+
+
+###  Task 4  
+
+
+
+Calculer la `taille` moyenne et la médiane. 
+
+
+
+```{r}
+paste0('mean = ',mean(taille))
+paste0('median = ', median(taille))
+```
+
+ Donner la classe modale pour un découpage en 4 classes de la variables `taille`.  
+
+
+
+```{r}
+
+T_eff_taille_4<-table(cut(taille,breaks=4))
+c(which.max(T_eff_taille_4),max(T_eff_taille_4))
+
+
+```
+
+
+Donner Calculer le mode de la variable `Score`.
+
+
+```{r}
+table(Score)
+c(which.max(table(Score)),max(table(Score)))
+```
+
+
+Afficher le min, le max et les 3 quartiles pour la variable `scoreConnaissance`. 
+
+
+```{r}
+quantile(mydata$scoreConnaissance)
+```
+
+
+
+
+Pour la variable qualitative ordonnée `niveau`, calculer le 1er quartile.
+
+
+```{r}
+levels(niveau)[quantile(as.numeric(niveau),prob=0.25)]
+
+```
+
+
+
+
+
+
+
+###  Task 5  
+
+
+
+
+Proposer une representation graphiquede la variable `sexe`.
+
+
+
+```{r out.width = "45%"}
+
+plot_ly(x = names(table(mydata$sexe)), y = table(mydata$sexe), type = 'bar', marker = list(color = "purple")) %>%
+  layout(title = 'sexe: Diagramme en barres',
+         xaxis = list(title = 'Niveau'),
+         yaxis = list(title = 'Effectifs'))
+```
+
+
+Proposer une representation graphique de la variable `Score`.
+
+```{r out.width = "45%"}
+
+couleur <- c("#FF5733", "#33FFB1", "#3379FF") 
+plot_ly(labels =  names(table(mydata$Score)), values = table(mydata$Score), type = 'pie', marker = list(colors = couleur)) %>%
+  layout(title = 'Score: Diagramme en secteurs')
+```
+
+
+
+Proposer une representation graphique de la variable `scoreConnaissance`.
+
+```{r out.width = "45%"}
+
+plot_ly(x = names(table(mydata$scoreConnaissance)), y = table(mydata$scoreConnaissance)) %>%
+  layout(title = ' Diagramme en bâtons',
+         xaxis = list(title = 'scoreConnaissance'),
+         yaxis = list(title = 'Effectifs'))%>%
+  add_bars(x= names(table(mydata$age)),y= table(mydata$age),width = 0.01)
+```
+
+
+
+
+
+Proposer une representation graphique de la variable `Taille`.
+
+
+```{r out.width = "45%"}
+plot_ly(x = mydata$taille, name = "Effectifs",
+        type = 'histogram', 
+        nbinsx = 7,  
+        marker = list(color = "purple")) %>%
+  layout(title = 'Niveau :Histogramme',
+         xaxis = list(title = 'Taille'),
+         yaxis = list(title = 'Effectif')) %>% 
+  layout(
+  barmode="overlay",
+  bargap=0.1)
+
+
+
+```
+
+
+
+
+Proposer une representation graphique de la variable `age`.
+
+
+```{r out.width = "45%"}
+plot_ly(y = mydata$age, type = "box",name = "", marker = list(color = "pink"))%>%
+ layout(title = 'AGE: Boxplot',
+     yaxis = list(title = 'Taille'))
+
+
+```
+
+
+###  Task 6  
+
+
+
+```{r eval=TRUE}
+library(rmarkdown)
+library(MASS)
+data_cars <- as.data.frame(cars)
+paged_table(data_cars)
+```
+
+
+```{r}
+distance<-data_cars$dist
+```
+Quelle loi convient à la variable `speed`?
+
+
+```{r}
+speed=data_cars$speed
+descdist(distance, boot=100)
+```
+
+La loi normale semble bien *"fitter"* 
+```{r}
+
+plot(fitdist(speed, "norm"))
+
+```
+
+```{r}
+
+```
+
+
+
+Les données `speed` sont-elles issues d'une loi normale ? Proposer un test
+
+
+**Test de Shapiro**  $H_0$: Loi normale $v.s.$ $H_1$: Pas une loi normale.
+
+```{r}
+shapiro.test(speed)
+```
+
+
+
+$\Rightarrow$ Petite *$p$-value*$>5\%$, on ne rejette pas $H_0$ donc oui, les données `speed` sont issues d'une loi normale!
+
+
+
+
+
+

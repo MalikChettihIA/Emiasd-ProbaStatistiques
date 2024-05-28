@@ -1,0 +1,294 @@
+---
+title: "Part. 2.A. Prise en main des données"
+subtitle:  "Corrigé" 
+author: "Katia Meziani"
+output:
+  html_document:
+    highlight: tango
+    theme: flatly
+    number-sections: true
+    code_folding: show
+    toc: yes
+    toc_float:
+      collapsed: true
+    number_sections: no
+ 
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval=TRUE,message=FALSE,warning=FALSE)
+```
+
+
+
+
+
+# Installation des librairies  {.unnumbered}
+
+
+
+```{r message=FALSE, warning=FALSE}
+library(rmarkdown)
+library(tidyverse) # pour  %>%
+library(questionr) #rename
+#library(caret) # preprocess ici
+#library(MASS)
+#library(survival)
+#library(npsurv)
+#library(lsei)
+#library(fitdistrplus)
+#library(questionr)
+#library(knitr)
+#library(ggplot2)
+#library(cowplot)
+#library(reshape2)
+#library(dplyr)
+#library(GGally)
+#library(corrplot)
+#library(carmydata) 
+#library(car)
+#library(multcomp)
+#library(dplyr)
+
+```
+
+
+
+
+# Task 1.  Téléchargement des données 
+
+Avec  la commande `read.csv2(`FormationR.csv`)` télécharger le  jeu de données EPO et nommer le `mydata`. Afficher ensuite vos données avec la fonction `paged_table` de la librarie `rmarkdown`.
+
+```{r}
+mydata=read.csv2("FormationR.csv")
+library(rmarkdown)
+paged_table(mydata)
+```
+
+
+# Task 2.  Transformer le type d'une variable 
+
+La fonction  `str` permet de visualiser la nature des données. Commenter la sortie de la fonction `str(mydata)`.  Transformer la nature des variables nécessaires sauf la variable `niveau`. Et vérifier que les modifications ont bien été faites.
+
+```{r }
+ str(mydata)
+```
+
+```{r }
+
+mydata$rapportSexuel<-as.factor(mydata$rapportSexuel)
+mydata$rapportRisque<-as.factor(mydata$rapportRisque)     
+mydata$transAvecPres<-as.factor(mydata$transAvecPres)          
+mydata$sexe<-as.factor(mydata$sexe)              
+mydata$departement<-as.factor(mydata$departement)       
+mydata$UFR<-as.factor(mydata$UFR) 
+ str(mydata)
+```
+
+
+
+# Task 3. Variable ordonnée
+
+Transformer la variable `niveau`en variable ordonnée
+             
+
+```{r}
+mydata$niveau=ordered(mydata$niveau,levels=c("L1","L2","L3","M1","M2"))
+levels(mydata$niveau)
+str(mydata$niveau)
+```
+
+
+# Task 4.  Affichage selectif
+
+De quel genre est le dernier individu ? Afficher les informations du 10 *ème* individu.
+
+
+```{r}
+mydata[40,2]
+mydata[10,]
+```
+
+
+#  Données manquantes `NA`
+
+
+### Suppression des lignes trop sparse
+
+```{r}
+seuil <- 0.4
+Tester_si_Trop_de_NA <- map_lgl(subset(mydata,select=c( -id)), ~mean(is.na(.x)) >seuil )
+Tester_si_Trop_de_NA %>%  as.matrix()
+```
+
+
+
+```{r}
+
+Nom_var_a_garder <- names(Tester_si_Trop_de_NA)[!Tester_si_Trop_de_NA]
+Nom_var_a_garder
+
+```
+
+
+Nombre de données manquantes
+
+
+```{r}
+is.na(mydata)%>%colSums() %>%  as.matrix()
+```
+
+### Variables Quantitatives.
+
+
+Sélectionner les variables quantitatives et remplacer les `NA`par la `median`
+
+```{r}
+Nom_Var_Quantita<-sapply(mydata, is.numeric)
+
+mydata[Nom_Var_Quantita] <- lapply(mydata[Nom_Var_Quantita], function(x) ifelse(is.na(x), median(x, na.rm = TRUE), x))
+
+mydata %>% select_if(is.numeric) %>%is.na()%>%colSums() %>%  as.matrix()
+```
+
+
+
+### Variables Qualitatives
+
+Sélectioner le nom des variables qualitatives et remplacer  les données manquantes `NA`  par le mode.
+
+```{r}
+Nom_Var_Qualita<-mydata %>% discard(is.numeric) %>%colnames()
+
+for(col in Nom_Var_Qualita){
+  mode <- names(which.max(table(mydata[col])))
+  mydata[is.na(mydata[col]), col] <- mode
+}
+
+mydata %>% is.na()%>%colSums() %>%  as.matrix()
+```
+
+
+
+
+Dans notre jeu de données 340 ans est une donnée abérrante, après vérification, il s'agit de 34 ans.
+
+
+```{r}
+mydata$age[which.max(mydata$age)]
+mydata$age[which.max(mydata$age)]=34
+mydata$age[which.max(mydata$age)]
+```
+
+
+
+
+# Task 5 : Supprimer un modalités
+
+Afficher les modalités de la variable `sexe` à l'aide de la commande `levels(mydata$sexe)` ? Pourquoi observe-t-on 3 modalités? 
+
+
+
+```{r}
+levels(mydata$sexe)
+```
+
+```{r}
+mydata=subset(mydata,sexe=="F"|sexe=="H") 
+mydata$sexe=droplevels(mydata$sexe)
+levels(mydata$sexe)
+```
+
+
+
+# Task 6: Ajout d'une modalité
+
+Les variables `UFR`, `rapportRisque`, `transAvecPres` et `rapportSexuel` ont une modalité vide `' '` également
+
+
+
+```{r}
+summary(mydata[,c('UFR','rapportRisque','transAvecPres','rapportSexuel')])
+```
+
+
+
+
+```{r}
+levels(mydata$UFR)[levels(mydata$UFR) == ''] <- "NR"
+levels(mydata$rapportRisque)[levels(mydata$rapportRisque) == ''] <- "NR"
+levels(mydata$transAvecPres)[levels(mydata$transAvecPres) == ''] <- "NR"
+levels(mydata$rapportSexuel)[levels(mydata$rapportSexuel) == ''] <- "NR"
+summary(mydata[,c('UFR','rapportRisque','transAvecPres','rapportSexuel')])
+```
+
+# Task 7: Regroupement de modalités
+
+
+
+Créeons un nouvelle colonne nomméé `Score` dans notre jeu de données qui sera une copie de la colonne `scoreConnaissance` mais de nature catégorielle. Puis regrouper les  modalités de `Score`  en 3  nouvelles modalités (`inf à 3`, `=3` et  `sup à 3`). Le regroupement de modalités se fait à l'aide de `levels`.
+
+
+```{r}
+mydata$Score<-as.factor(mydata$scoreConnaissance)
+paged_table(mydata)
+levels(mydata$Score)
+levels(mydata$Score) <- c("inf à 3","inf à 3","inf à 3", "=3", "sup à 3","sup à 3","sup à 3")
+levels(mydata$Score)
+```
+
+
+
+
+
+Regrouper les  modalités de `niveau` en 3  nouvelles modalités `L1_2`, ` L3`, `M1_2`.
+
+
+```{r}
+levels(mydata$niveau)
+levels(mydata$niveau) = c("L1_2", "L1_2", "L3", "M1_2", "M1_2")
+levels(mydata$niveau)
+```
+
+
+# Task 8 : Renommer une variables
+
+
+```{r}
+#library(questionr)
+#names(mydata)
+mydata=rename.variable(mydata,"frereEtSoeur","F&S")
+names(mydata)
+
+```
+
+
+Renommer les variables `rapportRisque`, `rapportAge` et `rapportSexuel` en respectivement `RRisque`, `RAge` et `RSexuel`
+```{r}
+mydata=rename.variable(mydata,"rapportRisque","RRisque")
+mydata=rename.variable(mydata,"rapportAge","RAge")
+mydata=rename.variable(mydata,"rapportSexuel","RSexuel")
+names(mydata)
+```
+
+
+Sélectionner les variables `sexe`, `age`, `taille`,  `niveau`, `scoreConnaissance`, `Score`           
+
+
+```{r}
+
+mydata2<-mydata[, c(2: 5, 13,14)]
+names(mydata2)
+```
+
+Pour créer un fichier `mydata2.csv`.          
+
+
+```{r}
+
+write.csv(mydata2, "mydata2.csv") 
+
+
+```
+

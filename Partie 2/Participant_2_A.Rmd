@@ -1,0 +1,219 @@
+---
+title: "Part. 2.A. Prise en main des données"
+subtitle:  "" 
+author: "Katia Meziani"
+output:
+  html_document:
+    highlight: tango
+    theme: flatly
+    number-sections: true
+    code_folding: show
+    toc: yes
+    toc_float:
+      collapsed: true
+    number_sections: no
+ 
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval=TRUE,message=FALSE,warning=FALSE)
+```
+
+
+
+
+
+# Installation des librairies  {.unnumbered}
+
+
+
+```{r message=FALSE, warning=FALSE}
+library(rmarkdown)
+library(tidyverse) # pour  %>%
+library(questionr) #rename
+library(caret) # preprocess ici
+```
+
+
+
+
+# Task 1.  Téléchargement des données 
+
+Avec  la commande `read.csv2(`FormationR.csv`)` télécharger le  jeu de données EPO et nommer le `mydata`. Afficher ensuite vos données avec la fonction `paged_table` de la librarie `rmarkdown`.
+
+```{r eval=FALSE}
+mydata=read.csv2("FormationR.csv")
+library(rmarkdown)
+paged_table(mydata)
+```
+
+
+# Task 2.  Transformer le type d'une variable 
+
+La fonction  `str` permet de visualiser la nature des données. Commenter la sortie de la fonction `str(mydata)`.  Transformer la nature des variables nécessaires sauf la variable `niveau`. Et vérifier que les modifications ont bien été faites.
+
+```{r }
+
+```
+
+```{r }
+
+
+```
+
+
+
+# Task 3. Variable ordonnée
+
+Transformer la variable `niveau`en variable ordonnée
+             
+
+```{r}
+
+```
+
+
+# Task 4.  Affichage selectif
+
+De quel genre est le dernier individu ? Afficher les informations du 10 *ème* individu.
+
+
+```{r}
+
+```
+
+
+#  Données manquantes `NA`
+
+
+### Suppression des lignes trop sparse
+
+```{r }
+
+```
+
+
+
+```{r}
+
+
+
+```
+
+
+### Variables Quantitatives.
+
+
+Sélectionner les variables quantitatives et remplacer les `NA`par la `median`
+
+```{r}
+
+
+
+```
+
+
+### Variables Qualitatives
+
+Sélectioner le nom des variables qualitatives et remplacer  les données manquantes `NA`  par le mode.
+
+```{r}
+
+
+
+```
+
+
+Dans notre jeu de données 340 ans est une donnée abérrante, après vérification, il s'agit de 34 ans.
+
+```{r}
+
+
+
+```
+
+
+
+# Task 5 : Supprimer un modalités
+
+Afficher les modalités de la variable `sexe` à l'aide de la commande `levels(mydata$sexe)` ? Pourquoi observe-t-on 3 modalités? 
+
+
+```{r}
+
+
+
+```
+
+
+# Task 6: Ajout d'une modalité
+
+Les variables `UFR`, `rapportRisque`, `transAvecPres` et `rapportSexuel` ont une modalité vide `' '` également
+
+
+```{r}
+
+
+
+```
+
+
+```{r}
+
+
+
+```
+
+
+
+# Task 7: Regroupement de modalités
+
+
+
+Créeons un nouvelle colonne nomméé `Score` dans notre jeu de données qui sera une copie de la colonne `scoreConnaissance` mais de nature catégorielle. Puis regrouper les  modalités de `Score`  en 3  nouvelles modalités (`inf à 3`, `=3` et  `sup à 3`). Le regroupement de modalités se fait à l'aide de `levels`.
+
+```{r}
+
+
+
+```
+
+
+
+Regrouper les  modalités de `niveau` en 3  nouvelles modalités `L1_2`, ` L3`, `M1_2`.
+
+
+```{r}
+
+
+
+```
+
+
+# Task 8 : Renommer une variables
+
+
+```{r}
+
+
+
+```
+
+
+Renommer les variables `rapportRisque`, `rapportAge` et `rapportSexuel` en respectivement `RRisque`, `RAge` et `RSexuel`
+```{r}
+
+
+
+```
+
+Pour créer un fichier `mydata2.csv` avec les variables `sexe`, `age`, `taille`,  `niveau`, `scoreConnaissance`, `Score`           
+
+```{r}
+
+
+
+```
+
+

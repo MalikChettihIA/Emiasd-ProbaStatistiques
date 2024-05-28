@@ -1,0 +1,245 @@
+---
+title: "Part. 2.C Analyse multivariée "
+subtitle: " "
+author: "Katia Meziani"
+output:
+#  pdf_document:
+#    toc: yes
+  html_document:
+    code_folding: hide
+    css: ./style.css
+    df_print: paged
+    highlight: tango
+    number_sections: no
+    theme: flatly
+    toc: yes
+    toc_float:
+      collapsed: no
+---
+
+
+
+  
+  
+
+# Librairies  et jeu de données {.unnumbered}
+
+
+
+```{r message=FALSE, warning=FALSE, out.width = "60%"}
+library(rmarkdown)
+library(tidyverse) # pour  %>%
+library( kableExtra) # kbl
+library(knitr) # kable
+library(ggplot2)
+library(plotly) # graphes dynamiques
+library(MASS)
+library(corrplot) # corrplot
+library(GGally) # ggpairs
+library(gridExtra) # co-plot pour ggplot
+```
+
+
+
+Télécharger le jeu de données EPO modifié et nommer le `mydata`. 
+
+```{r eval=FALSE}
+mydata=read.csv2("mydata2.csv",sep=',',row.names = 1)
+paged_table(mydata)
+```
+
+
+Transformer la nature des variables nécessaires.
+
+```{r eval=FALSE}
+mydata$sexe<-as.factor(mydata$sexe)  
+mydata$taille<-as.numeric(mydata$taille)   
+mydata$Score<-as.factor(mydata$Score) 
+mydata$niveau<-ordered(mydata$niveau,levels=c("L1_2","L3","M1_2"))
+ str(mydata)
+```
+
+Pour alléger les écritures, procédons à des copies de nos variables
+
+```{r eval=FALSE}
+sexe<-mydata$sexe
+age<-mydata$age
+taille<-mydata$taille
+niveau<-mydata$niveau
+Score<-mydata$Score
+scoreNum<-mydata$scoreConnaissance
+```
+
+
+
+### Task 1 
+
+
+
+Afficher le tableau de la distribution empirique jointe des variables (`sexe`,`Score`).
+
+
+
+```{r}
+
+```
+
+
+
+
+
+Afficher le tableau des distributions empiriques marginales des variables `sexe` et `Score`. 
+
+
+
+
+
+```{r}
+
+```
+
+
+
+Afficher le tableau des profils colonnes et des profils lignes pour les variables `sexe` et `Score`. 
+
+
+
+```{r}
+
+```
+
+
+
+
+
+### Task 2 
+
+
+
+Afficher la moyenne  de la variable quantitative `taille` en fonction des modalités des facteurs `Score` et `niveau`.
+
+
+
+```{r}
+
+```
+
+
+
+### Task 3 
+
+
+
+
+Existe-t-il un lien entre les variables qualitatives `Score` et `niveau`? Faire un test.
+
+
+```{r}
+
+```
+
+
+
+
+
+Existe-t-il un lien entre la variable quantitative `age` et la variable  qualitative `sexe`? Faire un test.
+
+```{r}
+
+```
+
+
+
+
+
+Existe-t-il un lien entre la variable quantitative `age` et la variable  qualitative `Score`? Faire un test.
+
+ 
+```{r}
+
+```
+
+
+
+
+
+Existe-t-il un lien entre la variable quantitative `age` et la variable  qualitative `scoreNum`? Faire un test.
+
+```{r}
+
+```
+
+
+
+### Task 4 
+
+
+Comparer les variables qualitatives `niveau` et `Score` à l'aide d'un diagramme en barres. 
+
+
+
+```{r}
+
+
+```
+
+
+
+
+### Task 5  
+
+
+Afficher les boxplots de la variable `age` suivant les modalités de la variable `Score`. 
+
+
+
+
+
+```{r   out.width = "60%", fig.align = 'center'}
+
+```
+
+
+
+
+
+Comparer l'`age` moyen des participants suivant leur `niveau` via une représentation graphique.
+
+
+
+```{r   out.width = "60%", fig.align = 'center'}
+
+```
+
+
+
+
+###  Task 6 
+
+
+
+Dessiner le nuage de points (`age`,`scoreConnaissance`).Afficher la droite des moindres carrées. 
+
+
+
+
+
+```{r   out.width = "60%", fig.align = 'center',message=FALSE, warning=FALSE}
+
+
+```
+
+
+
+
+Dessiner les 3 nuages de points (`age`,`scoreConnaissance`) par modalités de la variable `niveau`. Afficher les 3 droites des moindres carrées.
+
+
+
+```{r   out.width = "60%", fig.align = 'center',message=FALSE, warning=FALSE}
+
+
+```
+
+
+

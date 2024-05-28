@@ -1,0 +1,162 @@
+---
+title: "Projet IASD 2023-24"
+subtitle: 'Prédiction du prix du logment à Daegu '
+author: "Mettre vos noms ICI"
+output:
+#  pdf_document:
+#    toc: yes
+  html_document:
+    code_folding: hide
+    css: ./style.css
+    df_print: paged
+    highlight: tango
+    number_sections: no
+    theme: flatly
+    toc: yes
+    toc_float:
+      collapsed: no
+---
+
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.align = 'center', warning=FALSE,message=FALSE)
+```
+
+
+
+
+
+# Les données
+
+Le jeu de données concerne la vente de 5891 logements et de 29 variables explicatives décrivant (presque) tous les aspects de ce logement et de son environnement en Corée du Sud dans la ville de Daegu, sur une période de 10 ans. 
+
+
+
+
+
+
+## But de l'étude
+
+
+
+L'objectif est de  prédire le prix  de vente  et d'obtenir le modèle qui aura le plus petit `rmse`. Vous devez contruire un (ou 2 modèles) qui permet de calculer le prix de vente du logement ( $Y$=`SalePrice`)  en fonction de toutes ou une partie des variables (regresseurs/facteurs) contenues dans le jeu de données. 
+
+
+
+
+- `SalePrice`: Prix de vente de la propriété. 
+- `YearBuilt`: Année de construction de la propriété.
+- `YrSold`: Année de vente de la propriété.
+- `MonthSold`: Mois de vente de la propriété.
+- `Size.sqf.`: Taille de la propriété en pieds carrés.
+- `Floor`: Niveau de l'étage de la propriété.
+- `HallwayType`: Type de couloir dans le bâtiment.
+- `HeatingType`: Type de système de chauffage dans la propriété.
+- `AptManageType`: Type de gestion pour l'appartement.
+- `N_Parkinglot.Ground.`: Nombre de parkings en surface.
+- `N_Parkinglot.Basement.`: Nombre de parkings en sous-sol.
+- `TimeToBusStop`: Temps nécessaire pour atteindre l'arrêt de bus le plus proche.
+- `TimeToSubway`: Temps nécessaire pour atteindre la station de métro la plus proche.
+- `N_APT`: Nombre d'appartements dans le bâtiment.
+- `N_manager`: Nombre de gestionnaires pour l'appartement.
+- `N_elevators`: Nombre d'ascenseurs dans le bâtiment.
+- `SubwayStation`: Distance jusqu'à la station de métro la plus proche.
+- `N_FacilitiesNearBy.PublicOffice.`: Nombre de bureaux publics à proximité.
+- `N_FacilitiesNearBy.Hospital.`: Nombre d'hôpitaux à proximité.
+- `N_FacilitiesNearBy.Dpartmentstore.`: Nombre de grands magasins à proximité.
+- `N_FacilitiesNearBy.Mall.`: Nombre de centres commerciaux à proximité.
+- `N_FacilitiesNearBy.ETC.`: Nombre d'autres installations à proximité.
+- `N_FacilitiesNearBy.Park.`: Nombre de parcs à proximité.
+- `N_SchoolNearBy.Elementary.`: Nombre d'écoles primaires à proximité.
+- `N_SchoolNearBy.Middle.`: Nombre d'écoles secondaires à proximité.
+- `N_SchoolNearBy.High.`: Nombre de lycées à proximité.
+- `N_SchoolNearBy.University.`: Nombre d'universités à proximité.
+- `N_FacilitiesInApt`: Nombre d'installations disponibles dans le complexe d'appartements.
+- `N_FacilitiesNearBy.Total.`: Nombre total d'installations à proximité.
+- `N_SchoolNearBy.Total.`: Nombre total d'écoles à proximité.
+
+
+Il y a 2 jeux de données :
+
+- Le "train" avec 4189 observations, à partir duquel vous devez contruire votre modèle final 
+- Le "test" avec 1702 observations, que vous ne devez pas utiliser pour contruire votre modèle.
+
+
+```{r}
+train=read.csv2("train_set.csv",header=TRUE,sep=",")
+test=read.csv2("test_set.csv",header=TRUE,sep=",")
+```
+
+
+
+# Obligatoire
+
+
+### `seed`imposée
+
+Vous devez mettre la seed  à 2024 pour toute l'étude.
+
+```{r}
+set.seed(2024)
+```
+
+
+### Rapport court
+
+Un rapport de **5/6 pages maximum** au format `.pdf`ou `.html`. C'est un résumé de vos recherches.  Ce rapport doit être compris par un **non initié. AUCUN CODE!** Il comportera les parties suivantes 
+
+
+- **Part A.** Vous y présenterez une étude descriptives des données: les variables explicatives que vous avez conservées dans l'étude, la raison pour laquelle vous les avez conservées. On attachera une attention particulière à la variable cible. Vous donnerez quelques représentations numériques et/ou graphiques qui résument/expliquent vos choix/données (boxplot, table, plot....). La qualité des graphiques et des tableaux sera autant appréciée que leur pertinence!! On commentera soigneusement cette étude.
+
+- **Part B.**  Vous présenterez votre modèle final et les démarches effectuées pour arriver à ce dernier. Vous mettrez en évidence par des représentations numériques et/ou graphiques la pertinence de votre modèle. Vous présenterez vos scores :  le `rmse`  **à la fois sur le train et le test** dans un tableau soigné. Vous commenterez vos résultats.
+
+- **Part C.**  Vous ferez une conclusion qui résumera votre étude. Quelles sont vos conclusions finales ? Mentionnez les limites de votre analyse ou les orientations futures possibles de la recherche...
+
+### Rapport Long
+
+Un rapport Long (pas de limite) au format `.rmd ` **ET**  au format format `.pdf`ou `.html` où **toutes les commandes seront apparentes et auront été compilées**. Devront appararaitre:
+
+- **Votre prise en main des données**: après avoir téléchargé les 2 jeux de données, faites les vérifications usuelles (la bonne déclaration des données, suppression de colonnes inutiles...)
+
+- **Visualisation** Faire les représentations numériques et/ou graphiques qui résument/expliquent vos données (boxplot, table, plot....) (*Plus nombreuses que celles du rapport*). La qualité des graphiques et des tableaux sera autant appréciée que leur pertinence!! On commentera soigneusement cette étude. On attachera une attention particulière à la variable cible.
+
+- **Les modèles** Les différents modèles que vous avez testés, leurs scores seront résumés dans un tableau unique et clair. Vous proposerez un modèle final en expliquant pourquoi ce choix.
+
+- Vous mettrez en évidence votre recherche d'outliers ET la "validation" de votre modèle préféré.
+- Vous mettrez en évidence par des représentations numériques et/ou graphiques la pertinence de votre modèle préféré.
+
+- **Le score**:  Vous devez  évaluer vos scores finaux (`rmse`)  **à la fois sur le train et le test.** Vous présenterez vos résultats dans un tableau soigné. 
+
+
+
+<div class="brdred"> <span class="attention">⚠️</span> **Attention !**
+</div>
+<span style="color: blue;">
+ le score final doit être calculé à l'échelle (pas sur une transformation de la target $Y$ !!
+</span>
+
+**Vous commenterez TOUS vos résultats/commandes.**
+
+- **Conclusion** Vous ferez une conclusion qui résumera votre étude. Quelles sont vos conclusions finales ? Mentionnez les limites de votre analyse ou les orientations futures possibles de la recherche.
+
+- Mettre une table des matières sur le côté
+
+# Notation
+
+
+
+
+Sont pris en compte dans la notation 3 points importants: 
+
+- La qualité de la présentation et la compréhension du **Rapport** par un non initié.
+- La variété, la qualité et la pertinence des représentations numériques et/ou graphiques.
+- La qualité des codes et le soin apporté à leur explication.
+- Le Score par rapport à ma baseline et les autres groupes.
+- La conclusion (critique, ouverture...)
+
+
+Les fichiers doivent être envoyés par mail par message au plus tard le 1 septembre 2024.
+
+
