@@ -1,5 +1,5 @@
 ---
-title: "Projet IASD 2023-24"
+title: "Projet_IASD_24_25 - 01 Préparation de données"
 subtitle: 'Prédiction du prix du logment à Daegu '
 author: "Malik Chettih"
 output:
@@ -27,6 +27,11 @@ library(tidyverse) # pour  %>%
 library(questionr) #rename.variable
 library(kableExtra)
 library(knitr)
+library(e1071) # skewness et kurtosis
+library(ggplot2)
+library(plotly) # graphes dynamiques
+library(MASS)
+library(fitdistrplus) #graphe Cullen & Fr
 
 ```
 
@@ -56,12 +61,12 @@ mydata$TimeToBusStop=ordered(mydata$TimeToBusStop,levels=c("0~5min","5min~10min"
 mydata$TimeToSubway=ordered(mydata$TimeToSubway,levels=c("0~5min","5min~10min","10min~15min","15min~20min","no_bus_stop_nearby"))
 mydata$N_APT<-as.integer(mydata$N_APT)
 mydata$N_manager<-as.integer(mydata$N_manager)
-mydata$N_manager<-as.integer(mydata$N_manager)
+mydata$N_elevators<-as.integer(mydata$N_elevators)
 mydata$SubwayStation<-as.factor(mydata$SubwayStation)
-mydata$N_FacilitiesNearBy.PublicOffice<-as.integer(mydata$N_FacilitiesNearBy.PublicOffice)
+mydata$N_FacilitiesNearBy.PublicOffice.<-as.integer(mydata$N_FacilitiesNearBy.PublicOffice.)
 mydata$N_FacilitiesNearBy.Dpartmentstore.<-as.integer(mydata$N_FacilitiesNearBy.Dpartmentstore.)
 mydata$N_FacilitiesNearBy.Mall.<-as.integer(mydata$N_FacilitiesNearBy.Mall.)
-mydata$N_FacilitiesNearBy.ETC<-as.integer(mydata$N_FacilitiesNearBy.ETC)
+mydata$N_FacilitiesNearBy.ETC.<-as.integer(mydata$N_FacilitiesNearBy.ETC.)
 mydata$N_FacilitiesNearBy.Park.<-as.integer(mydata$N_FacilitiesNearBy.Park.)
 mydata$N_SchoolNearBy.Elementary.<-as.integer(mydata$N_SchoolNearBy.Elementary.)
 mydata$N_SchoolNearBy.Middle.<-as.integer(mydata$N_SchoolNearBy.Middle.)
@@ -96,14 +101,14 @@ Supprimer la variable TimeToSubway
 ```{r}
 mydata_subset <- subset(mydata, select = -TimeToSubway)
 ```
-Sélectionner les variables quantitatives et remplacer les NApar la median.
+Sélectionner les variables quantitatives et remplacer les NA par la median.
 ```{r}
 Nom_Var_Quantita<-sapply(mydata_subset, is.numeric)
 mydata_subset[Nom_Var_Quantita] <- lapply(mydata_subset[Nom_Var_Quantita], function(x) ifelse(is.na(x), median(x, na.rm = TRUE), x))
 mydata_subset %>% select_if(is.numeric) %>%is.na()%>%colSums() %>%  as.matrix()
 ```
 
-Sélectionner les variables quantitatives et remplacer les NApar la median.
+Sélectionner les variables qualitatives et remplacer les NA par la median.
 ```{r}
 Nom_Var_Qualita<-mydata_subset %>% discard(is.numeric) %>%colnames()
 
@@ -139,7 +144,7 @@ mydata_subset=rename.variable(mydata_subset,"TimeToBusStop","Temps_Bus")
 mydata_subset=rename.variable(mydata_subset,"N_APT","Nb_Appartment_Batiment")
 mydata_subset=rename.variable(mydata_subset,"N_manager","Nb_Gestionnaire")
 mydata_subset=rename.variable(mydata_subset,"N_elevators","Nb_Ascenseurs")
-mydata_subset=rename.variable(mydata_subset,"SubwayStation","Distance_Metro")
+mydata_subset=rename.variable(mydata_subset,"SubwayStation","Station_Metro")
 mydata_subset=rename.variable(mydata_subset,"N_FacilitiesNearBy.PublicOffice.","Nb_Bureau_Publics")
 mydata_subset=rename.variable(mydata_subset,"N_FacilitiesNearBy.Hospital.","Nb_Hopitaux")
 mydata_subset=rename.variable(mydata_subset,"N_FacilitiesNearBy.Dpartmentstore.","Nb_Grands_Magasins")
@@ -157,3 +162,8 @@ str(mydata_subset)
 
 ```
 
+# Task 5.  Creer un sous jeu de données au format .csv
+
+```{r}
+write.csv(subset(mydata_subset,select=c(-X)), "mytrain_subset.csv")
+```

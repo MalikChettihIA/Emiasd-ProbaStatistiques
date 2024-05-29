@@ -1,0 +1,145 @@
+---
+title: "Projet_IASD_24_25 - 02 Analyse univariée"
+subtitle: 'Prédiction du prix du logment à Daegu '
+author: "Malik Chettih"
+output:
+#  pdf_document:
+#    toc: yes
+  html_document:
+    code_folding: hide
+    css: ./style.css
+    df_print: paged
+    highlight: tango
+    number_sections: no
+    theme: flatly
+    toc: yes
+    toc_float:
+      collapsed: no
+---
+
+# Installation des librairies  {.unnumbered}
+```{r}
+library(rmarkdown)
+library(tidyverse) # pour  %>%
+library(questionr) #rename.variable
+library(kableExtra)
+library(knitr)
+library(e1071) # skewness et kurtosis
+library(ggplot2)
+library(plotly) # graphes dynamiques
+library(MASS)
+library(fitdistrplus) #graphe Cullen & Fr
+
+```
+
+# Task 1.  Téléchargement des données
+
+```{r}
+mydata=read.csv2("mytrain_subset.csv", sep=",")
+paged_table(mydata)
+```
+
+Pour alléger les écritures, procédons à des copies de nos variables
+```{r}
+Prix_Vente<-mydata_subset$Prix_Vente
+Année_Construction<-mydata_subset$Année_Construction
+Année_Vente<-mydata_subset$Année_Vente
+Mois_Vente<-mydata_subset$Mois_Vente
+Surface<-mydata_subset$Surface
+Niveau_Etage<-mydata_subset$Niveau_Etage
+TCouloir<-mydata_subset$TCouloir
+TChauffage<-mydata_subset$TChauffage
+TGestion<-mydata_subset$TGestion
+Nb_Parking_Surface<-mydata_subset$Nb_Parking_Surface
+Nb_Parking_Sous_So<-mydata_subset$Nb_Parking_Sous_Sol
+Temps_Bus<-mydata_subset$Temps_Bus
+Nb_Appartment_Batiment<-mydata_subset$Nb_Appartment_Batiment
+Nb_Gestionnaire<-mydata_subset$Nb_Gestionnaire
+Nb_Ascenseurs<-mydata_subset$Nb_Ascenseurs
+Station_Metro<-mydata_subset$Station_Metro
+Nb_Bureau_Publics<-mydata_subset$Nb_Bureau_Publics
+Nb_Hopitaux<-mydata_subset$Nb_Hopitaux
+Nb_Grands_Magasins<-mydata_subset$Nb_Grands_Magasins
+Nb_Centre_Commerciaux<-mydata_subset$Nb_Centre_Commerciaux
+Nb_AUtres_Proximité<-mydata_subset$Nb_AUtres_Proximité
+Nb_Parcs<-mydata_subset$Nb_Parcs
+Nb_Ecoles_Primaires<-mydata_subset$Nb_Ecoles_Primaires
+Nb_Ecoles_Colléges<-mydata_subset$Nb_Ecoles_Colléges
+Nb_Ecoles_Lycée<-mydata_subset$Nb_Ecoles_Lycée
+Nb_Ecoles_Universités<-mydata_subset$Nb_Ecoles_Universités
+Nb_Installations<-mydata_subset$Nb_Installations
+Nb_Total_Proximité<-mydata_subset$Nb_Total_Proximité
+Nb_Total_Ecoles<-mydata_subset$Nb_Total_Ecoles
+
+```
+
+# Task 2.  Tableaux des effectifs et fréquences des effectifs 
+```{r}
+nom_variables <- subset(mydata,select=c(-X, -Prix_Vente)) %>%colnames()
+nom_variables
+```
+
+```{r}
+# Boucler sur le nom des colonnes
+for (nom_variable in nom_variables){
+  
+  # Extraire la colonne courante
+  variable <- mydata[[nom_variable]]
+  # Calcul du tableau des effectifs
+  effectifs <- table(variable)
+  # Calcul du tableau des effectifs cumulés
+  effectifs_cumules <- cumsum(effectifs)
+  
+  # Affichage des résultats
+  cat("\n Variable: ", nom_variable, "\n")
+  print("Tableau des effectifs:")
+  print(effectifs)
+  print("Tableau des effectifs cumulés:")
+  print(effectifs_cumules)
+  
+}
+```
+
+# Task 3.  Tableaux des fréquence et fréquence cumulée des modalités des variables qualitatives
+
+## Cas 
+```{r}
+nom_variables_qualitatives <- subset(mydata,select=c(-X, -Prix_Vente))  %>% discard(is.numeric) %>%colnames()
+
+# Boucler sur le nom des colonnes
+for (nom_variable in nom_variables_qualitatives){
+  
+  # Extraire la colonne courante
+  variable <- mydata[[nom_variable]]
+  # Calcul du tableau des effectifs
+  effectifs <- table(variable)
+  # Calcul du tableau des fréquences
+  frequence <- prop.table(effectifs)
+  # Calcul du tableau des effectifs cumulés
+  frequence_cumules <- cumsum(frequence)
+  
+  # Affichage des résultats
+  cat("\n Variable: ", nom_variable, "\n")
+  print("Tableau des fréquences:")
+  print(frequence)
+  print("Tableau des fréquences cumulés:")
+  print(frequence_cumules)
+  
+}  
+```
+
+## Cas des variables quantitatives continues
+```{r}
+# Calcul du tableau des effectifs
+effectifs <- table(cut(Surface,breaks=10))
+# Calcul du tableau des effectifs cumulés
+effectifs_cumules <- cumsum(effectifs)
+  
+# Affichage des résultats
+cat("\n Variable quantitative continue: Surface \n")
+print("Tableau des effectifs:")
+print(effectifs)
+print("Tableau des effectifs cumulés:")
+print(effectifs_cumules)
+  
+```
