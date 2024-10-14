@@ -1,0 +1,190 @@
+---
+title: "Projet_IASD_24_25 - 03 Analyse Année_Construction"
+subtitle: 'Prédiction du prix du logment à Daegu '
+author: "Malik Chettih"
+output:
+#  pdf_document:
+#    toc: yes
+  html_document:
+    code_folding: hide
+    css: ./style.css
+    df_print: paged
+    highlight: tango
+    number_sections: no
+    theme: flatly
+    toc: yes
+    toc_float:
+      collapsed: no
+---
+
+# Installation des librairies  {.unnumbered}
+```{r}
+library(rmarkdown)
+library(tidyverse) # pour  %>%
+library(questionr) #rename.variable
+library(kableExtra)
+library(knitr)
+library(e1071) # skewness et kurtosis
+library(ggplot2)
+library(plotly) # graphes dynamiques
+library(MASS)
+library(fitdistrplus) #graphe Cullen & Fr
+
+```
+
+# Task 1.  Téléchargement des données
+
+```{r}
+mydata=read.csv2("mytrain_subset.csv", sep=",")
+paged_table(mydata)
+summary(mydata)
+```
+
+Pour alléger les écritures, procédons à des copies de nos variables
+```{r}
+Prix_Vente<-mydata$Prix_Vente
+Année_Construction<-mydata$Année_Construction
+Année_Vente<-mydata$Année_Vente
+Mois_Vente<-mydata$Mois_Vente
+Surface<-mydata$Surface
+Niveau_Etage<-mydata$Niveau_Etage
+TCouloir<-mydata$TCouloir
+TChauffage<-mydata$TChauffage
+TGestion<-mydata$TGestion
+Nb_Parking_Surface<-mydata$Nb_Parking_Surface
+Nb_Parking_Sous_So<-mydata$Nb_Parking_Sous_Sol
+Temps_Bus<-mydata$Temps_Bus
+Nb_Appartment_Batiment<-mydata$Nb_Appartment_Batiment
+Nb_Gestionnaire<-mydata$Nb_Gestionnaire
+Nb_Ascenseurs<-mydata$Nb_Ascenseurs
+Station_Metro<-mydata$Station_Metro
+Nb_Bureau_Publics<-mydata$Nb_Bureau_Publics
+Nb_Hopitaux<-mydata$Nb_Hopitaux
+Nb_Grands_Magasins<-mydata$Nb_Grands_Magasins
+Nb_Centre_Commerciaux<-mydata$Nb_Centre_Commerciaux
+Nb_AUtres_Proximité<-mydata$Nb_AUtres_Proximité
+Nb_Parcs<-mydata$Nb_Parcs
+Nb_Ecoles_Primaires<-mydata$Nb_Ecoles_Primaires
+Nb_Ecoles_Colléges<-mydata$Nb_Ecoles_Colléges
+Nb_Ecoles_Lycée<-mydata$Nb_Ecoles_Lycée
+Nb_Ecoles_Universités<-mydata$Nb_Ecoles_Universités
+Nb_Installations<-mydata$Nb_Installations
+Nb_Total_Proximité<-mydata$Nb_Total_Proximité
+Nb_Total_Ecoles<-mydata$Nb_Total_Ecoles
+
+```
+
+# Task 1 - Effectifs de Station_Metro
+```{r}
+T_eff_Station_Metro<-table(Station_Metro) 
+T_eff_Station_Metro
+
+```
+# Task 2 - Effectifs cummulés de Station_Metro
+```{r}
+cumsum(T_eff_Station_Metro)
+```
+
+# Task 3 - Fréquence des modalités de Station_Metro
+```{r}
+prop.table(T_eff_Station_Metro)
+```
+
+# Task 4 - Fréquences cumulés de Station_Metro
+```{r}
+cumsum(prop.table(T_eff_Station_Metro))
+```
+
+# Task 5 - Indicateurs de tendance centrale et de position
+
+## Mode(s)/ Classe(s) modale(s) empirique(s). Modalité(s) la/les plus fréquente(s). 
+
+Pas nécessairement unique!
+Pour les variables catégorielles ou discrètes, le(s) mode(s) est la (les) modalité(s) la (les) plus fréquente(s):
+
+```{r}
+c(which.max(table(Station_Metro)),max(table(Station_Metro)))
+```
+## Les quantilles 
+```{r}
+median(as.numeric(Station_Metro))
+```
+
+
+# Task 5 - Indicateurs de tendance centrale et de position (NA)
+```{r}
+
+```
+
+# Task 6 - Représentations graphiques
+
+## Diagramme en barres
+La hauteur de chaque barre est proportionnelle à l’effectif (ou à la fréquence). La largeur de chaque barre est arbitrairement choisie.
+
+```{r}
+plot_ly(x = names(table(Station_Metro)), y = table(Station_Metro), type = 'bar', marker = list(color = "purple")) %>%
+  layout(title = 'Surface: Diagramme en barres',
+         xaxis = list(title = 'Station_Metro'),
+         yaxis = list(title = 'Effectifs'))
+```
+
+## Diagramme en secteurs
+Chaque secteur angulaire est proportionnel à l’effectif (ou à la fréquence).
+```{r}
+```
+
+##
+```{r}
+couleur <- c("#FF5733", "#33FFB1", "#3379FF") 
+couleur1 <- c("#890090", "#402023", "#59F9FF") 
+plot_ly(labels =  names(table(Station_Metro)), values = table(Station_Metro), type = 'pie', marker = list(colors = couleur1)) %>%
+  layout(title  = 'Niveau: Diagramme en secteurs')
+```
+
+## Histogramme
+Dans un histogramme, les rectangles ont pour bornes les bornes de chaque classe et la hauteur est soit l’effectif soit la fréquence.
+```{r}
+plot1<-plot_ly(x = Station_Metro, name = "Effectifs",
+        type = 'histogram', 
+        nbinsx = 10,  
+        marker = list(color = "purple")) %>%
+  layout(title = 'Station_Metro :Histogramme',
+         xaxis = list(title = 'Taille'),
+         yaxis = list(title = 'Effectif')) %>% 
+  layout(
+  barmode="overlay",
+  bargap=0.1)
+
+plot2<-plot_ly(x = Station_Metro, name = "Frequences",
+        type = 'histogram', 
+        histnorm = "probability", 
+        nbinsx = 10,  
+        marker = list(color = "cyan")) %>%
+  layout(title = 'Station_Metro :Histogramme',
+         xaxis = list(title = 'Taille'),
+         yaxis = list(title = 'Fréquences')) %>% 
+  layout(
+  barmode="overlay",
+  bargap=0.1)
+
+subplot(plot1, plot2)
+```
+
+## Boxplot/Boîte de distribution/boîte à moustache
+Résume quelques caractéristiques de position et de dispersion du caractére étudié (médiane, quartiles, minimum, maximum ou déciles).
+
+##
+```{r}
+```
+
+##
+```{r}
+```
+
+##
+```{r}
+```
+
+##
+```{r}
+```

@@ -1,0 +1,103 @@
+---
+title: "Projet_IASD_24_25 - 03 Analyse Année_Construction"
+subtitle: 'Prédiction du prix du logment à Daegu '
+author: "Malik Chettih"
+output:
+#  pdf_document:
+#    toc: yes
+  html_document:
+    code_folding: hide
+    css: ./style.css
+    df_print: paged
+    highlight: tango
+    number_sections: no
+    theme: flatly
+    toc: yes
+    toc_float:
+      collapsed: no
+---
+
+# Installation des librairies  {.unnumbered}
+```{r}
+library(rmarkdown)
+library(tidyverse) # pour  %>%
+library(questionr) #rename.variable
+library(kableExtra)
+library(knitr)
+library(e1071) # skewness et kurtosis
+library(ggplot2)
+library(plotly) # graphes dynamiques
+library(MASS)
+library(fitdistrplus) #graphe Cullen & Fr
+
+```
+
+# Task 1.  Téléchargement des données
+
+```{r}
+mydata=read.csv2("mytrain_subset.csv", sep=",")
+paged_table(mydata)
+```
+
+Pour alléger les écritures, procédons à des copies de nos variables
+```{r}
+Prix_Vente<-mydata$Prix_Vente
+var_label(Prix_Vente)<-"Prix de vente de la propriété."
+Année_Construction<-mydata$Année_Construction
+var_label(Année_Construction)<-"Année de construction de la propriété."
+Année_Vente<-mydata$Année_Vente
+var_label(Année_Vente)<-" Année de vente de la propriété."
+Mois_Vente<-mydata$Mois_Vente
+var_label(Mois_Vente)<-"Mois de vente de la propriété."
+Surface<-mydata$Surface
+var_label(Surface)<-"Taille de la propriété en pieds carrés."
+Niveau_Etage<-mydata$Niveau_Etage
+var_label(Niveau_Etage)<-" Niveau de l’étage de la propriété."
+TCouloir<-mydata$TCouloir
+var_label(TCouloir)<-"Type de couloir dans le bâtiment."
+TChauffage<-mydata$TChauffage
+var_label(TChauffage)<-"Type de système de chauffage dans la propriété."
+TGestion<-mydata$TGestion
+var_label(TGestion)<-"Type de gestion pour l’appartement."
+Nb_Parking_Surface<-mydata$Nb_Parking_Surface
+var_label(Nb_Parking_Surface)<-"Nombre de parkings en surface."
+Nb_Parking_Sous_Sol<-mydata$Nb_Parking_Sous_Sol
+var_label(Nb_Parking_Sous_So)<-"Nombre de parkings en sous-sol."
+Temps_Bus<-mydata$Temps_Bus
+var_label(Temps_Bus)<-"Temps nécessaire pour atteindre l’arrêt de bus le plus proche."
+Nb_Appartment_Batiment<-mydata$Nb_Appartment_Batiment
+var_label(Nb_Appartment_Batiment)<-"Nombre d’appartements dans le bâtiment."
+Nb_Gestionnaire<-mydata$Nb_Gestionnaire
+var_label(Nb_Gestionnaire)<-"Nombre de gestionnaires pour l’appartement."
+Nb_Ascenseurs<-mydata$Nb_Ascenseurs
+var_label(Nb_Ascenseurs)<-"Nombre d’ascenseurs dans le bâtiment"
+Station_Metro<-mydata$Station_Metro
+var_label(Station_Metro)<-"Distance jusqu’à la station de métro la plus proche."
+Nb_Bureau_Publics<-mydata$Nb_Bureau_Publics
+var_label(Nb_Bureau_Publics)<-"Nombre de bureaux publics à proximité."
+Nb_Hopitaux<-mydata$Nb_Hopitaux
+var_label(Nb_Hopitaux)<-"Nombre d’hôpitaux à proximité."
+Nb_Grands_Magasins<-mydata$Nb_Grands_Magasins
+var_label(Nb_Grands_Magasins)<-"Nombre de grands magasins à proximité."
+Nb_Centre_Commerciaux<-mydata$Nb_Centre_Commerciaux
+var_label(Nb_Centre_Commerciaux)<-"Nombre de centres commerciaux à proximité."
+Nb_AUtres_Proximité<-mydata$Nb_AUtres_Proximité
+var_label(Nb_AUtres_Proximité)<-"Nombre d’autres installations à proximité."
+Nb_Parcs<-mydata$Nb_Parcs
+var_label(Nb_Parcs)<-"Nombre de parcs à proximité."
+Nb_Ecoles_Primaires<-mydata$Nb_Ecoles_Primaires
+var_label(Nb_Ecoles_Primaires)<-"Nombre d’écoles primaires à proximité."
+Nb_Ecoles_Colléges<-mydata$Nb_Ecoles_Colléges
+var_label(Nb_Ecoles_Colléges)<-"Nombre d’écoles secondaires à proximité."
+Nb_Ecoles_Lycée<-mydata$Nb_Ecoles_Lycée
+var_label(Nb_Ecoles_Lycée)<-"Nombre de lycées à proximité."
+Nb_Ecoles_Universités<-mydata$Nb_Ecoles_Universités
+var_label(Nb_Ecoles_Universités)<-"Nombre d’universités à proximité."
+Nb_Installations<-mydata$Nb_Installations
+var_label(Nb_Installations)<-"Nombre d’installations disponibles dans le complexe d’appartements."
+Nb_Total_Proximité<-mydata$Nb_Total_Proximité
+var_label(Nb_Total_Proximité)<-"Nombre total d’installations à proximité."
+Nb_Total_Ecoles<-mydata$Nb_Total_Ecoles
+var_label(Nb_Total_Ecoles)<-"Nombre total d’écoles à proximité."
+```
+

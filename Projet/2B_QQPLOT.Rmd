@@ -1,0 +1,65 @@
+---
+title: "2_B_QQPLOT"
+author: "Malik Chettih"
+date: "2024-06-11"
+output: html_document
+---
+
+## QQ PLOT
+
+```{r}
+
+library(ggplot2)
+
+n <- 1000
+m <- 5
+sigma <- 2
+x_lim <- c(-m, m)
+y_lim <- x_lim
+
+# Exemple de données
+Normal_data <- data.frame(valeurs = rnorm(n, 0, 1))
+sigma_data <- data.frame(valeurs = runif(n, min = 0, max = 5))
+
+# m_data <- data.frame(valeurs = rnorm(n, m, 1))
+# m_sigma_data <- data.frame(valeurs = rnorm(n, m, sigma))
+# uni_data<-data.frame(valeurs =-runif(n, min = 0, max = 5))
+
+# Création des graphiques QQ plot avec ggplot2 pour chaque jeu de données
+ggplot() +
+  stat_qq(data = Normal_data, aes(sample = valeurs, color = "Normal"), distribution = qnorm, dparams = list(mean = 0, sd = 1), size = 0.1) +
+  stat_qq(data = sigma_data, aes(sample = valeurs, color = "Sigma=2"), distribution = qnorm, dparams = list(mean = 0, sd = 1), size = 0.1) +
+#  stat_qq(data = m_data, aes(sample = valeurs, color = "Mean=5"), distribution = qnorm, dparams = list(mean = 0, sd = 1), size = 0.1) +
+#  stat_qq(data = m_sigma_data, aes(sample = valeurs, color = "Mean=5,Sigma=2"), distribution = qnorm, dparams = list(mean = 0, sd = 1), size = 0.1) +
+#  stat_qq(data = uni_data, aes(sample = valeurs, color = "Uniform[0,5]"), distribution = qnorm, dparams = list(mean = 0, sd = 1), size = 0.1) +
+  geom_abline(intercept = 0, slope = 1, color = "red", linetype = "dashed") + 
+  labs(title = "QQ plot - Distribution normale",
+       x = "Quantiles théoriques",
+       y = "Quantiles observés",
+       color = "Données") +  # Légende pour les couleurs
+  coord_cartesian(xlim = x_lim, ylim = y_lim) +
+  scale_color_manual(values = c("Normal" = "blue", "Sigma=2" = "green")) 
+
+
+plot1 <- ggplot(Normal_data)+
+        geom_density(aes(x = valeurs), color="#aaaaaa", fill="purple" )+
+        theme_light()+
+        labs(title = "Loi Normale", x="Valeur de la variable V1 ", y="densité")
+plot1
+
+plot2 <- ggplot(sigma_data)+
+        geom_density(aes(x = valeurs), color="#aaaaaa", fill="cyan" )+
+        theme_light()+
+        labs(title = "Loi Normale", x="Valeur de la variable V1 ", y="densité")
+plot2
+
+
+plot3 <- ggplot()+
+        geom_density(data=Normal_data, aes(x = valeurs), color="#aaaaaa", fill="purple" )+
+        geom_density(data=sigma_data, aes(x = valeurs), color="#aaaaaa", fill="cyan" )+
+        theme_light()+
+        labs(title = "Loi Normale", x="Valeur des variables Normal & Sigma ", y="densité")
+plot3
+
+
+```
