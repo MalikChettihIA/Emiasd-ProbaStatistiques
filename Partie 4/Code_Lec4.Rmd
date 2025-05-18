@@ -1,0 +1,1231 @@
+---
+title: "Code. Logistic regression model"
+subtitle: "Methods for Regression and classification "
+author: "Katia Meziani"
+output:
+  html_document:
+    self_contained: true
+    math_method: 
+      engine: mathjax
+      url: https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+    code_folding: hide
+    css: ./style.css
+    df_print: paged
+    highlight: tango
+    number_sections: no
+    theme: flatly
+    toc: yes
+    toc_float:
+      collapsed: no
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  fig.align = "center",
+  fig.height = 3.5, warning=FALSE,message=FALSE
+)
+```
+
+
+
+
+
+
+## Packages{.unnumbered}
+
+```{r}
+set.seed(0911)
+library(ggplot2)
+library(gridExtra)
+library(cowplot)
+library(plotly) # interactif plot
+library(ggfortify) # diagnostic plot
+library(forestmodel) # plot odd ratio
+library(arm) # binnedplot diagnostic plot in GLM
+
+
+library(knitr)
+library(dplyr)
+library(tidyverse)
+library(tidymodels)
+library(broom) # funtion augment to add columns to the original data that was modeled
+library(effects) # plot effect of covariate/factor
+library(questionr) # odd ratio
+
+
+library(lmtest) # LRtest
+library(survey) # Wald test
+library(vcdExtra) # deviance test
+
+
+
+
+
+library(rsample)   # for data splitting
+library(glmnet)
+library(nnet) # multinom, glm
+library(caret)
+library(ROCR)
+#library(PRROC) autre package pour courbe roc et courbe pr
+library(ISLR) # dataset for statistical learning
+
+ 
+
+
+
+
+
+
+
+ggplot2::theme_set(ggplot2::theme_light())# Set the graphical theme
+
+
+```
+
+
+
+
+<style>
+ .circle {
+            width: 20px;           /* Largeur du cercle */
+            height: 20px;          /* Hauteur du cercle */
+            border-radius: 50%;    /* Pour rendre le div circulaire */
+            border: 2px solid black; /* Bordure du cercle */
+            display: inline-flex;         /* Utilisation de flexbox pour centrer le texte */
+            align-items: center;   /* Alignement vertical */
+            justify-content: center; /* Alignement horizontal */
+            margin: 8px;         /* Marge autour des cercles */
+            font-size: 14px;      /* Taille de la police */
+        }
+</style>
+
+
+<style>
+  .attention {
+    font-size: 24px;
+    color: red;
+    font-weight: bold;
+  }
+  
+  
+
+  
+  
+</style>
+  <style>
+    .underline {
+      text-decoration: underline;
+    }
+  </style>
+
+
+
+
+<style contenteditable>
+  .brd {
+    border: 2px solid black; ; padding: 5px
+  }
+</style>
+
+
+<style>
+  .brdpurple {
+    border: 2px solid black; 
+    padding: 10px; /* Espace interne */
+    background-color: rgba(128, 0, 128, 0.05); /* Fond violet très très clair avec transparence */
+    margin: 10px 0; /* Espace autour de l'encadrement */
+  }
+</style>
+
+
+<style contenteditable>
+  .brdred {
+    border: 2px solid #B22222 ; 
+    padding: 10px; /* Ajouter de l'espace autour du texte */
+    background-color: #f9f9f9; /* Optionnel : couleur de fond pour le texte */
+    margin: 10px 0; /* Ajouter de l'espace au-dessus et en-dessous de l'encadrement */
+  }
+</style>
+
+
+
+
+<style>
+  .solution {
+    font-size: 24px;
+    color: yellow; /* Couleur jaune pour simuler la lumière */
+  }
+</style>
+
+
+  <style>
+    .underline {
+      text-decoration: underline;
+    }
+  </style>
+
+
+<style>
+  .brdgreen {
+    border: 2px solid black; /* Bordure verte */
+    padding: 10px; /* Espace interne */
+    background-color: rgba(114, 213, 114, 0.03); /* Fond vert pastel très clair avec transparence */
+    margin: 10px 0; /* Espace autour de l'encadrement */
+  }
+</style>
+   
+<style>
+  .brdblack {
+    border: 2px solid black; /* Définir la couleur et l'épaisseur de la bordure */
+    padding: 10px; /* Ajouter de l'espace autour du texte */
+    background-color: #f9f9f9; /* Optionnel : couleur de fond pour le texte */
+    margin: 10px 0; /* Ajouter de l'espace au-dessus et en-dessous de l'encadrement */
+  }
+</style>
+
+
+<style>
+  .brdblackempty {
+    border: 2px solid black; /* Définir la couleur et l'épaisseur de la bordure */
+    padding: 10px; /* Ajouter de l'espace autour du texte */
+    margin: 10px 0; /* Ajouter de l'espace au-dessus et en-dessous de l'encadrement */
+  }
+</style>
+
+
+
+
+
+
+
+
+# Introduction
+
+
+
+
+
+##  Logistic vs Regression example
+
+
+
+
+
+```{r eval=FALSE}
+
+ISLR::Default %>%rmarkdown::paged_table()
+```
+
+
+***
+
+
+```{r eval=FALSE}
+
+p1 <- ISLR::Default %>%
+  mutate(prob = ifelse(default == "Yes", 1, 0)) %>%
+  ggplot(aes(balance, prob)) +
+  geom_point(alpha = .15) +
+  geom_smooth(method = "lm") +
+  ggtitle("Linear regression model fit") +
+  xlab("Balance") +
+  ylab("Probability of Default")
+ggplotly(p1)
+```
+
+
+
+
+***
+
+
+```{r eval=FALSE}
+p2 <- ISLR::Default %>%
+  mutate(prob = ifelse(default == "Yes", 1, 0)) %>%
+  ggplot(aes(balance, prob)) +
+  geom_point(alpha = .15) +
+  geom_smooth(method = "glm", method.args = list(family = "binomial")) +
+  ggtitle("Logistic regression model fit") +
+  xlab("Balance") +
+  ylab("Probability of Default")
+
+subplot(ggplotly(p1), ggplotly(p2), nrows = 1)
+```
+
+
+
+# Logistic regression 
+
+
+##   Uploading the dataset
+
+
+
+***
+
+
+
+```{r eval=FALSE}
+mydata<-read.csv("binary.csv",header=T,sep=",")
+mydata$admit<-factor(mydata$admit)
+mydata$rank<-factor(mydata$rank)
+mydata%>%rmarkdown::paged_table()
+```
+
+
+***
+
+
+
+
+```{r eval=FALSE}
+summary(mydata)
+```
+
+
+***
+
+
+To **avoid any confusion** regarding the levels of the response variable, let us rename them:
+
+```{r eval=FALSE}
+levels(mydata$admit)[levels(mydata$admit) %in% c('0', '1')] <-c('No', 'Yes')
+table(mydata$admit) %>% as.data.frame() %>% setNames(c("Admit", "Counts")) %>%  kableExtra::kbl()
+
+```
+
+For sake of simplicity, we can define:
+```{r eval=FALSE}
+m0<-levels(mydata$admit)[1]
+m1<-levels(mydata$admit)[2]
+```
+
+
+
+
+
+
+***
+
+
+
+
+```{r eval=FALSE}
+#library(rsample) 
+set.seed(0911)
+#Create a stratified split of the data, maintaining the proportion of classes
+mydata_split <- initial_split(mydata, prop = 0.7, strata = "admit")
+#mydata_split <- initial_split(mydata, prop = .7)
+train <- training(mydata_split)
+test  <- testing(mydata_split)
+
+```
+
+
+
+
+
+##  Simple logistic regression with `glm`function
+
+
+
+
+
+```{r eval=FALSE}
+model1 <- glm(admit ~ gre, family = "binomial", data = train)
+model2 <- glm(admit ~ gpa, family = "binomial", data = train)
+model3 <- glm(admit ~ rank, family = "binomial", data = train)
+```
+
+
+***
+
+
+```{r eval=FALSE}
+model1%>% summary()%>% coefficients%>%knitr::kable()
+model2%>% summary()%>% coefficients%>%knitr::kable()
+model3%>% summary()%>% coefficients%>%knitr::kable()
+```
+
+
+
+***
+
+
+```{r eval=FALSE}
+
+
+train2 <- train %>% mutate(prob = ifelse(admit == m1, 1, 0))
+p1 <-train2 %>% ggplot( aes(gre, prob)) +
+  geom_point(alpha = 0.15) +
+  geom_smooth(method = "glm", method.args = list(family = "binomial")) +
+  xlab("gre") +ggtitle("Model 1")+ ylab("P(Y=1)")
+
+p2 <-train2%>% ggplot( aes(gpa, prob)) +
+  geom_point(alpha = 0.15) +
+  geom_smooth(method = "glm", method.args = list(family = "binomial")) +ggtitle("Model 2") +
+  xlab("gpa")  +
+  ylab("P(Y=1)")
+
+train3 <- broom::augment(model3, train2) %>% mutate(.fitted = exp(.fitted))
+p3 <-train3 %>% ggplot( aes(rank, .fitted, color = rank)) +geom_boxplot() +
+ geom_rug(sides = "b", position = "jitter", alpha = 0.2, show.legend = FALSE) +
+  ggtitle("Model 3") +
+  xlab("rank")  +
+  ylab("P(Y=1)")
+
+subplot(ggplotly(p1), ggplotly(p2), ggplotly(p3),nrows = 1)
+```
+
+
+
+#  Complete study of the summary of a multivariate logistic regression model
+
+
+
+
+
+```{r eval=FALSE}
+model_glm <- glm(
+  admit ~ rank+gpa+gre,
+  family = "binomial", 
+  data = train
+  )
+summary(model_glm)
+```
+
+
+
+
+***
+
+<span style="color: blue;">
+**1. Number of Fisher Scoring iterations**
+</span> 
+
+```{r eval=FALSE}
+summary(model_glm)$iter
+```
+
+
+
+***
+
+<span style="color: blue;">
+**2. Coefficients**
+</span >
+
+```{r eval=FALSE}
+summary(model_glm)$coefficients
+```
+
+
+
+***
+
+
+
+
+```{r eval=FALSE}
+#library(survey)
+regTermTest(model_glm,"gre")
+regTermTest(model_glm,"gpa")
+```
+
+
+
+```{r eval=FALSE}
+regTermTest(model_glm,"rank")
+```
+
+***
+
+<span style="color: blue;">
+**3. Deviance**
+</span>
+
+
+
+
+```{r eval=FALSE}
+model_glm$deviance
+```
+
+
+
+
+```{r eval=FALSE}
+model_glm$null.deviance
+```
+
+
+
+
+#  Diagnostic plots and Deviance residuals
+
+## Types of residuals
+
+
+
+***
+
+
+<span style="color: blue;">
+**1. Response residuals**
+</span>
+
+
+```{r eval=FALSE}
+# response residuals=y_i-hat p_i
+model_glm%>% residuals(type='response') %>% summary()
+```
+
+
+
+***
+
+<span style="color: blue;">
+**2. Pearson residuals**
+</span>
+
+
+```{r eval=FALSE}
+model_glm%>% residuals(type='pearson') %>% summary()
+```
+
+
+
+***
+
+<span style="color: blue;">
+**3. Standardized Pearson residuals**
+</span> 
+
+```{r eval=FALSE}
+model_glm%>% rstandard(type='pearson') %>% summary()
+```
+
+***
+
+<span style="color: blue;">
+**4. Deviance residuals**
+</span>
+
+
+```{r eval=FALSE}
+#by default :  model_glm%>% residuals() %>% summary()
+model_glm%>% residuals(type = "deviance") %>% summary()
+```
+
+
+***
+
+<span style="color: blue;">
+**5. Standardized deviance residual**
+</span>
+
+
+<span class="probleme"><span style="color: blue;">**Ⓡ**</span> </span>  To compute these residuals, use:
+```{r eval=FALSE}
+model_glm%>% rstandard(type='deviance') %>% summary()
+```
+
+
+
+
+
+##  Usual diagnostic plots
+
+
+
+
+<span style="color: blue;">
+**1. Residuals vs. Fitted plot**
+</span> 
+
+
+```{r eval=FALSE}
+autoplot(model_glm,1)
+```
+
+
+
+
+***
+
+<span style="color: blue;">
+**2. Scale-Location plot** 
+</span> 
+
+
+```{r eval=FALSE}
+autoplot(model_glm,3)
+```
+
+
+
+***
+
+<span style="color: blue;">
+**3. Normal Q-Q plot**_
+</span> 
+
+
+```{r eval=FALSE}
+autoplot(model_glm,2)
+```
+
+
+
+
+##  New diagnostic plots
+
+<span style="color: blue;">
+**1. Normal Q-Q plot**
+</span>
+
+
+```{r eval=FALSE}
+residual_glm<-rstandard(model_glm,type = 'deviance')
+#residual_glm<-rstandard(model_glm,type = 'pearson')
+
+
+ggplot(train,aes(sample = residual_glm,col=admit)) +geom_qq(size=1)+geom_qq_line(col='black')+ facet_wrap(~admit)+ 
+  ylab("Standardized deviance residuals Quantiles") + xlab("Theoretical Quantiles") +
+  ggtitle("Normal Q-Q plot") 
+```
+
+
+***
+
+<span style="color: blue;">
+**2. An alternative to _Residuals vs Fitted_ plot**
+</span>
+
+
+
+
+```{r eval=FALSE}
+binnedplot(fitted(model_glm), residuals(model_glm, type = "response"),col.int = "blue",col.pts = 2)
+
+```
+
+
+
+
+
+
+# Odds ratio (OR)
+
+
+
+##  OR with R
+
+
+***
+
+
+
+
+```{r eval=FALSE}
+library(questionr)
+odds.ratio(model_glm)%>%  kableExtra::kbl() %>% kableExtra::kable_styling()
+```
+
+
+```{r eval=FALSE}
+OR_glm<-odds.ratio(model_glm)
+OR_glm
+```
+
+
+
+
+***
+
+
+
+```{r eval=FALSE}
+#library(forestmodel)
+forest_model(model_glm)
+```
+
+
+
+
+
+#  Variables selection
+
+
+
+##  Test of Type I and II
+
+
+
+```{r eval=FALSE}
+anova(model_glm,test="Chisq")
+```
+
+
+
+****
+
+
+
+```{r eval=FALSE}
+drop1(model_glm, test = "Chisq")
+```
+
+
+
+
+
+##  Compare models
+
+
+ 
+```{r eval=FALSE}
+model_glm<-glm(admit~rank+gpa+gre,family='binomial',data=train)
+modF2<-glm(admit~rank+gre,family='binomial',data=train)
+modF<-glm(admit~rank+gpa,family='binomial',data=train)
+modNull<-glm(admit~1,family='binomial',data=train)
+```
+
+
+***
+
+ 
+
+```{r eval=FALSE}
+#library(vcdExtra)
+LRstats(model_glm,modF,modF2,modNull)
+```
+
+
+
+
+
+##  Comparing Nested Models
+
+
+
+```{r eval=FALSE}
+#library(lmtest)
+lrtest(modF,model_glm)
+```
+
+
+***
+
+
+
+
+```{r eval=FALSE}
+modF_int<-glm(admit~gpa*rank,family='binomial',data=train)
+lrtest(modF, modF_int)
+```
+
+
+
+
+
+#  Visualizing Variable Effects
+
+
+
+```{r eval=FALSE}
+#library(effects)
+plot(allEffects(modF))
+```
+
+
+
+
+
+#   Confusion Matrix Analysis
+
+
+
+
+***
+
+<span style="color: purple;"><span style="font-size: 17px;"> 
+1. **Confusion Matrix Structure** 
+</span></span>  
+
+
+
+<table style="width: 100%; border-collapse: collapse;">
+<thead>
+<tr>
+<th style="border: 1px solid black; text-align: left; padding: 8px;color: blue;"> </th>
+<th style="border: 1px solid black; text-align: left; padding: 8px;color: black;"> $Y_i=0\quad$ </th>
+<th style="border: 1px solid black; text-align: left; padding: 8px;color: black;"> $Y_i=1\quad$ </th>
+</tr>
+<tr>
+<th style="border: 1px solid black; text-align: left; padding: 8px;color: black;"> $\widehat Y_i=0\quad$ </th>
+<td style="border: 1px solid black; padding: 8px; "> `tn`   </td>
+<td style="border: 1px solid black; padding: 8px; ">  `fn` </td>
+</tr>
+<tr>
+<th style="border: 1px solid black; text-align: left; padding: 8px;color: black;"> $\widehat Y_i=1\quad$ </th>
+<td style="border: 1px solid black; padding: 8px; "> `fp`  </td>
+<td style="border: 1px solid black; padding: 8px; ">  `tp` </td>
+</tr>
+</tbody>
+</table>
+<br>
+
+
+
+***
+
+<span style="color: purple;"><span style="font-size: 17px;"> 
+2. **Displaying Predictions for Different Thresholds**
+</span></span>  
+
+
+
+
+```{r eval=FALSE}
+glm_probs <- data.frame(probs = modF$fitted.values)
+glm_probs%>%rmarkdown::paged_table()
+```
+
+
+
+***
+
+```{r eval=FALSE}
+
+Neg<-glm_probs[glm_probs$probs<.5,]
+Pos<-glm_probs[glm_probs$probs>.5,]
+
+ plot_ly() %>% 
+  add_histogram( x=~Neg,name='Negative')  %>% 
+  add_histogram( x=~Pos,name='Positive')  %>% 
+  layout(xaxis = list(title = 'Predicted probabilies'),yaxis = list(title = 'Count'))%>%    
+layout(legend=list(title=list(text='<b> Prediction for s=0.5 </b>')))
+
+
+```
+
+
+***
+
+```{r eval=FALSE}
+Neg3<-glm_probs[glm_probs$probs<.3,]
+Pos3<-glm_probs[glm_probs$probs>.3,]
+
+ plot_ly() %>% 
+  add_histogram( x=~Neg3,name='Negative')  %>% 
+  add_histogram( x=~Pos3,name='Positive')  %>% 
+  layout(xaxis = list(title = 'Predicted probabilies'),yaxis = list(title = 'Count'))%>%    
+layout(legend=list(title=list(text='<b> Prediction for s=0.3 </b>')))
+```
+
+
+
+***
+
+
+<span style="color: purple;"><span style="font-size: 17px;"> 
+3. **Confusion Matrices for Different Thresholds**
+</span></span>  
+
+
+
+
+
+```{r eval=FALSE}
+# s=0.5
+glm_pred<-glm_probs %>% mutate(pred.5 = as.factor(ifelse(probs>.5, m1, m0)))
+# s=0.3
+glm_pred$pred.3<-as.factor(ifelse(glm_probs>.3,m1, m0))
+glm_pred%>%rmarkdown::paged_table()
+```
+
+
+
+
+```{r eval=FALSE}
+CM_5<-caret::confusionMatrix(glm_pred$pred.5,train$admit,positive="Yes")$table
+CM_5%>%  kableExtra::kbl() %>% kableExtra::kable_styling()
+```
+
+***
+
+
+```{r eval=FALSE}
+CM_3<-caret::confusionMatrix(glm_pred$pred.3,train$admit,positive="Yes")$table
+CM_3%>%  kableExtra::kbl() %>% kableExtra::kable_styling()
+```
+
+
+
+
+#  Key Metrics for Evaluating Model Performance
+
+
+
+
+
+
+##  Accuracy
+
+
+
+
+
+***
+
+
+
+```{r eval=FALSE}
+Acc<-sum(diag(CM_5))/sum(CM_5)
+Acc
+```
+
+
+
+***
+
+
+```{r eval=FALSE}
+#library(ROCR)
+Acc_pred <- prediction(glm_pred$probs,train$admit)
+Acc_perf <- performance(Acc_pred, 'acc')
+Acc_values<-data.frame(acc_v=slot(Acc_perf,"y.values")[[1]])
+Acc_values$s_acc_v<-slot(Acc_perf,"x.values")[[1]]
+Acc_values%>%rmarkdown::paged_table()
+```
+
+
+***
+
+
+
+```{r eval=FALSE}
+#library(plotly)
+Acc_max<-Acc_values$acc_v[which.max(Acc_values$acc_v)]
+s_max<-Acc_values$s_acc_v[which.max(Acc_values$acc_v)]
+
+plot_ly()%>%
+  add_segments(x = s_max, xend = s_max, y = 0, yend = Acc_max, line = list(dash = "dash", color = 'red',width = 0.5), showlegend = FALSE) %>%
+  add_segments(x = 0, xend = s_max, y = Acc_max, yend = Acc_max, line = list(dash = "dash", color = 'red',width = 0.5), showlegend = FALSE) %>%
+  add_trace(x = Acc_values$s_acc_v, y =Acc_values$acc_v, mode = 'lines',  type = 'scatter')%>%
+  layout(yaxis = list(
+    title = "Accuracy"),
+    xaxis = list(title = "Threshold s"))%>%
+  layout(title = 'Accuracy at every threshold s')
+```
+
+
+
+
+
+##  Precision-Recall representation
+
+
+```{r eval=FALSE}
+#pred <- prediction(glm_pred$probs,glm_pred$y)
+#perf <- performance(pred, "fp","tp","fn","tn","npv","tnr")
+```
+
+
+
+***
+
+
+
+
+```{r eval=FALSE}
+
+
+glm_pred$pred.s_max_Acc<-NULL
+glm_pred$y<-as.factor(train$admit)
+
+#library(ROCR)
+pr_pred <- prediction(glm_pred$probs,glm_pred$y)
+pr_perf <- performance(pr_pred, "rec", "prec")
+
+pr_values<-data.frame(Threshold=slot(pr_perf,"alpha.values")[[1]])
+pr_values$Recall<-slot(pr_perf,"y.values")[[1]]
+pr_values$Precision<-slot(pr_perf,"x.values")[[1]]
+# pr_values <- pr_values[-c(1),] 
+pr_values %>% rmarkdown::paged_table()
+
+```
+
+
+
+***
+
+
+```{r eval=FALSE}
+plot_ly(data = pr_values, x = ~Threshold) %>%
+  add_trace(y = ~Precision, mode = 'lines', name = 'Precision', type = 'scatter')%>%
+  add_trace(y = ~Recall, mode = 'lines', name = 'Recall', type = 'scatter')%>%
+  layout(title = 'Precision and Recall at every threshold s') %>%
+  layout(legend=list(title=list(text='<b> Metrics </b>')))
+
+```
+
+
+
+***
+
+
+
+
+##  Analysis of Confusion Matrix Output
+
+
+
+
+***
+
+
+
+
+```{r eval=FALSE}
+rCM<-caret::confusionMatrix(glm_pred$pred.5,glm_pred$y,mode = "everything",positive="Yes")
+
+rCM
+```
+
+
+
+#  Graphical skills assessment of a prediction model
+
+
+
+
+
+##  ROC curve for balanced classes
+
+
+
+
+```{r eval=FALSE}
+#library(ROCR)
+roc_pred <- prediction(glm_pred$probs,glm_pred$y)
+roc_perf <- performance(pr_pred, "fpr", "tpr")
+roc_values<-data.frame(Threshold=slot(roc_perf,"alpha.values")[[1]])
+roc_values$TPR<-slot(roc_perf,"x.values")[[1]]
+roc_values$FPR<-slot(roc_perf,"y.values")[[1]]
+#pr_values<-pr_values[-c(1),]
+roc_values%>%rmarkdown::paged_table()
+```
+
+
+
+***
+
+
+
+```{r eval=FALSE}
+plot_ly(data = roc_values, x = ~FPR) %>%
+
+  add_trace(y = ~TPR, mode = 'lines', name = 'ROC curve', type = 'scatter')%>%
+  add_segments(x = 0, xend = 1, y = 0, yend = 1,name='No skill model', line = list(dash = "dash", color = 'red',width=1), showlegend = T)%>%layout(title = 'ROC curve')%>%    layout(legend=list(title=list(text='<b> Legend </b>')))
+
+```
+
+
+
+
+
+##  Precision-recall curve for unbalanced classes
+
+
+
+
+```{r eval=FALSE}
+Q<-sum((table(glm_pred$y)[2]))/length(glm_pred$y)
+Q
+```
+
+
+
+***
+
+
+
+```{r eval=FALSE}
+plot_ly(data = pr_values, x = ~Recall) %>%
+  add_trace(y = ~Precision, mode = 'lines', name = 'Precision-recall curve', type = 'scatter')%>%
+  add_segments(x = 0, xend = 1, y = Q, yend = Q,name='No skill model', 
+               line = list(dash = "dash", color = 'red',width=1), showlegend = T)%>%
+  layout(title = 'Prediction-recall curve')%>%
+  layout(legend=list(title=list(text='<b> Legend </b>')))
+```
+
+
+
+
+
+# Performance assessment of a prediction model: Metrics 
+
+##  Area under the  curve (AUC) 
+
+
+
+
+***
+
+
+
+```{r eval=FALSE}
+#library(ROCR)
+roc_auc_pred <- prediction(glm_pred$probs,glm_pred$y)
+roc_auc_perf <- performance(roc_auc_pred, "auc")
+roc_auc<- unlist(slot(roc_auc_perf,"y.values"))
+
+pr_auc_pred <- prediction(glm_pred$probs,glm_pred$y)
+pr_auc_perf <- performance(pr_auc_pred, "aucpr")
+pr_auc<- unlist(slot(pr_auc_perf,"y.values"))
+cat("roc_auc :", roc_auc,", pr_auc :",pr_auc)
+```
+
+
+
+
+##  F1-score 
+
+
+
+***
+
+```{r eval=FALSE}
+
+F1_score=caret::confusionMatrix(glm_pred$pred.5,glm_pred$y,mode = "everything",positive="Yes")$byClass['F1']
+F1_score
+```
+
+
+
+
+
+##  F1-score curve
+
+
+
+
+***
+
+
+```{r eval=FALSE}
+#library(ROCR)
+F1_pred <- prediction(glm_pred$probs,glm_pred$y)
+F1_perf <- performance(F1_pred, "f")
+pr_values_b<-pr_values
+pr_values_b$F1<-slot(F1_perf,"y.values")[[1]]
+pr_values_b%>%rmarkdown::paged_table()
+```
+
+
+***
+
+
+```{r eval=FALSE}
+#library(plotly)
+plot_ly(data=pr_values_b, x = ~Threshold)%>%
+   add_trace(y = ~Precision, mode = 'lines', name = 'Precision', type = 'scatter',line = list(width = 1, dash ='dot'))%>%
+   add_trace(y = ~Recall, mode = 'line', name = 'Recall', type = 'scatter',line = list(width = 1, dash = 'dot'))%>%
+   add_trace( y =~F1, mode = 'lines', name = 'F1-score', type = 'scatter',line = list(width = 2))%>%
+   layout( xaxis = list(title = "Threshold")) %>%
+   layout(title = 'F1-score(s)')%>% 
+   layout(legend=list(title=list(text='<b> Metrics </b>')))
+```
+
+
+
+***
+
+
+
+```{r eval=FALSE}
+
+Q<-sum((table(glm_pred$y)[2]))/length(glm_pred$y)
+hat_Q<-1-pr_values_b$Threshold
+pr_values_b$no_skill<-(2*Q*(1-pr_values_b$Threshold))/(Q+(1-pr_values_b$Threshold))
+pr_values_b%>%rmarkdown::paged_table()
+```
+
+
+***
+
+
+
+
+```{r eval=FALSE}
+plot_ly(data=pr_values_b, x = ~Threshold)%>%
+   add_trace( y =~F1, mode = 'lines', name = 'F1-score', type = 'scatter',line = list(width = 2))%>%
+   add_trace( y =~no_skill, mode = 'lines', name = 'No-skill', type = 'scatter',line = list(width = 1, dash = 'dot'))%>%
+   layout( xaxis = list(title = "Threshold")) %>%
+   layout(title = 'F1-score(s) vs No-skill')%>% 
+    layout(legend=list(title=list(text='<b> Curves </b>')))
+```
+
+
+
+
+***
+
+
+
+```{r eval=FALSE}
+2*Q/(Q+1)
+```
+
+
+
+
+***
+
+
+
+
+
+
+```{r eval=FALSE}
+F1_max<-pr_values_b$F1[which.max(pr_values_b$F1)]
+s_F1_max<-pr_values_b$Threshold[which.max(pr_values_b$F1)]
+c(s_F1_max,F1_max)
+```
+
+
+
+
+#  F-beta scores
+
+
+
+***
+
+
+
+```{r eval=FALSE}
+beta<-0.4
+pr_values_b$Fbeta.4<-(1+beta^2)/((beta^2/(pr_values_b$Recall))+(1/(pr_values_b$Precision)))
+
+beta<-0.6
+pr_values_b$Fbeta.6<-(1+beta^2)/((beta^2/(pr_values_b$Recall))+(1/(pr_values_b$Precision)))
+```
+
+***
+
+
+
+```{r eval=FALSE}
+
+plot_ly(data=pr_values_b, x = ~Threshold)%>%
+   add_trace(y = ~F1, mode = 'line', name = 'beta=0.5', type = 'scatter',line = list(width = 1, dash = 'dot'))%>%
+   add_trace( y =~pr_values_b$Fbeta.6, mode = 'lines', name = "beta=0.6", type = 'scatter',line = list(width = 2))%>%
+   add_trace( y =~pr_values_b$Fbeta.4, mode = 'lines', name = 'beta=0.4', type = 'scatter',line = list(width = 2))%>%
+   layout(title = 'F-beta-score(s) for different values of beta ')%>%    layout(legend=list(title=list(text='<b> beta </b>')))%>%
+  layout(yaxis = list(title = 'Fbeta-score(s)'),xaxis = list(title = 'Threshold(s)'))
+```
+
+
